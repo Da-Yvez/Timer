@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hiru TV - Hiru Star Timer with Black Screen Detection</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #202020;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    position: relative;
+    overflow-x: hidden;
+    min-height: 100vh;
+    margin: 0;
+  }
+
+  h1 {
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: white;
+    font-size: 2.5rem;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    letter-spacing: -0.5px;
+  }
+
+  .subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+    margin-bottom: 30px;
+    font-weight: 400;
+  }
+
+  .timer-count {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    padding: 8px 16px;
+    border-radius: 20px;
+    color: white;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .add-timer {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    padding: 20px 30px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+
+  input,
+  button {
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    font-size: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  input {
+    background: rgba(255, 255, 255, 0.9);
+    color: #202020;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: #0078d7;
+    box-shadow: 0 0 0 3px rgba(0, 120, 215, 0.2);
+    transform: translateY(-2px);
+  }
+
+  input[type="number"] {
+    width: 100px;
+  }
+
+  button {
+    background: linear-gradient(135deg, #0078d7 0%, #0063b1 100%);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 120, 215, 0.3);
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 120, 215, 0.4);
+  }
+
+  button:active {
+    transform: translateY(0);
+  }
+
+  .timers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    justify-content: center;
+    max-width: 1400px;
+    margin-bottom: 40px;
+  }
+
+  .timer-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 28px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    padding: 35px;
+    text-align: center;
+    width: 300px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    animation: slideIn 0.5s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(30px) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .timer-container:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+  }
+
+  .timer-container.removing {
+    animation: slideOut 0.4s ease-in forwards;
+  }
+
+  @keyframes slideOut {
+    to {
+      opacity: 0;
+      transform: translateY(-30px) scale(0.8);
+    }
+  }
+
+  .delete-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(232, 17, 35, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(232, 17, 35, 0.3);
+  }
+
+  .timer-container:hover .delete-btn {
+    opacity: 1;
+  }
+
+  .delete-btn:hover {
+    background: #c00;
+    transform: rotate(90deg) scale(1.1);
+  }
+
+  .timer-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #202020;
+    letter-spacing: -0.3px;
+  }
+
+  .circle {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto 25px;
+  }
+
+  svg {
+    transform: rotate(-90deg);
+    width: 200px;
+    height: 200px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+  }
+
+  .circle-bg {
+    fill: none;
+    stroke: #e0e0e0;
+    stroke-width: 12;
+  }
+
+  .circle-progress {
+    fill: none;
+    stroke: url(#gradient);
+    stroke-width: 12;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+  }
+
+  .time-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #202020;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .timeout-message {
+    margin-top: 15px;
+    font-size: 1.1rem;
+    color: #e81123;
+    font-weight: 700;
+    display: none;
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .controls button {
+    margin: 0;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    border-radius: 10px;
+    flex: 1;
+    min-width: 70px;
+  }
+
+  /* NDI Camera Section */
+  .camera-section {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    padding: 30px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    margin-bottom: 40px;
+    width: 100%;
+    max-width: 800px;
+  }
+
+  .camera-section h2 {
+    color: white;
+    margin-top: 0;
+    font-weight: 600;
+  }
+
+  .camera-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  video {
+    background: black;
+    border-radius: 12px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+  }
+
+  #video {
+    width: 100%;
+    max-width: 640px;
+  }
+
+  .camera-status {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    font-weight: 500;
+  }
+
+  .status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #e81123;
+  }
+
+  .status-dot.active {
+    background: #00bc6f;
+  }
+
+  /* Fullscreen Overlay */
+  .fullscreen-overlay {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.4s ease, background-color 0.15s ease;
+  }
+
+  .fullscreen-overlay.active {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .fullscreen-timer {
+    text-align: center;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 60px;
+    padding: 80px 120px;
+    box-shadow: 0 30px 100px rgba(0, 0, 0, 0.5);
+    max-width: 95%;
+    border: 3px solid rgba(255, 255, 255, 0.9);
+    position: relative;
+  }
+
+  .fullscreen-timer .timer-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 50px;
+    color: #202020;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .fullscreen-timer .circle {
+    width: 550px;
+    height: 550px;
+    margin: 0 auto 50px;
+  }
+
+  .fullscreen-timer svg {
+    width: 550px;
+    height: 550px;
+  }
+
+  .fullscreen-timer .circle-bg {
+    stroke-width: 30;
+    stroke: #e0e0e0;
+  }
+
+  .fullscreen-timer .circle-progress {
+    stroke-width: 30;
+  }
+
+  .fullscreen-timer .time-display {
+    font-size: 10rem;
+    font-weight: 800;
+    color: #202020;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .fullscreen-timer .timeout-message {
+    margin-top: 40px;
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: #ffeb3b;
+    text-shadow: 0 0 20px rgba(255, 235, 59, 0.5);
+  }
+
+  .fullscreen-timer .controls button {
+    margin: 15px;
+    padding: 24px 70px;
+    font-size: 2rem;
+    font-weight: 700;
+    border-radius: 20px;
+  }
+
+  .exit-fullscreen {
+    position: absolute;
+    top: 40px;
+    right: 50px;
+    background: rgba(211, 47, 47, 0.9);
+    backdrop-filter: blur(10px);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    padding: 16px 30px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    z-index: 1001;
+  }
+
+  .exit-fullscreen:hover {
+    background: rgba(183, 28, 28, 0.9);
+    transform: scale(1.05);
+  }
+
+  /* NDI Video Preview in Fullscreen */
+  .ndi-preview-container {
+    position: absolute;
+    top: 40px;
+    left: 50px;
+    z-index: 1001;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .ndi-preview-container:hover {
+    transform: scale(1.05);
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  .ndi-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    color: white;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
+  .ndi-preview-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #e81123;
+  }
+
+  .ndi-preview-dot.active {
+    background: #00bc6f;
+    animation: pulse 1.5s infinite;
+  }
+
+  #fullscreenVideo {
+    width: 480px;
+    height: 260px;
+    display: block;
+  }
+
+  .preview-status {
+    color: white;
+    font-size: 0.9rem;
+    margin-top: 8px;
+    text-align: center;
+    opacity: 0.8;
+  }
+
+  /* Live Clock */
+  .live-clock {
+    position: fixed;
+    right: 40px;
+    bottom: 30px;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 1px;
+    opacity: 0.9;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fullscreen-overlay .live-clock {
+    position: absolute;
+    right: 70px;
+    bottom: 50px;
+    font-size: 4rem;
+    font-weight: 800;
+    opacity: 1;
+  }
+
+  /* Navigation Arrows */
+  .nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    width: 90px;
+    height: 90px;
+    font-size: 2.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .nav-arrow:hover {
+    background: rgba(255, 255, 255, 0.4);
+    border-color: rgba(255, 255, 255, 0.8);
+    transform: translateY(-50%) scale(1.15);
+  }
+
+  .nav-arrow:active {
+    transform: translateY(-50%) scale(0.95);
+  }
+
+  .nav-arrow.disabled {
+    opacity: 0.2;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .nav-arrow.left {
+    left: 50px;
+  }
+
+  .nav-arrow.right {
+    right: 50px;
+  }
+
+  /* Red Blink Effect */
+  .fullscreen-overlay.red-blink {
+    background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+  }
+
+  .fullscreen-overlay.red-permanent {
+    background: linear-gradient(135deg, #cc0000 0%, #990000 100%);
+  }
+
+  /* Auto Switch Notification */
+  .auto-switch-notification {
+    position: absolute;
+    top: 150px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 120, 215, 0.95);
+    backdrop-filter: blur(20px);
+    color: white;
+    padding: 24px 48px;
+    border-radius: 20px;
+    font-size: 1.6rem;
+    font-weight: 700;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    display: none;
+    z-index: 100;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    animation: slideDown 0.4s ease-out;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
+  /* Particles */
+  .particle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #ffeb3b;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: particleFloat 2s ease-out forwards;
+  }
+
+  @keyframes particleFloat {
+    0% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-200px) scale(0);
+    }
+  }
+
+  /* Keyboard Shortcuts Hint */
+  .shortcuts-hint {
+    position: fixed;
+    bottom: 100px;
+    right: 40px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    padding: 15px 20px;
+    border-radius: 12px;
+    color: white;
+    font-size: 0.85rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .shortcuts-hint.show {
+    opacity: 1;
+  }
+
+  .shortcuts-hint kbd {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    margin: 0 2px;
+  }
+
+  /* Hidden canvas for black frame detection */
+  #canvas {
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<h1>⏱️ Hiru TV - Hiru Star NDI Timer with Black Screen Detection</h1>
+<p class="subtitle">Professional Timer Management with NDI Camera Monitoring</p>
+<div class="timer-count" id="timerCount">0 Timers Active</div>
+
+<!-- NDI Camera Section -->
+<div class="camera-section">
+  <h2>NDI Camera Monitoring</h2>
+  <div class="camera-container">
+    <video id="video" autoplay muted playsinline></video>
+    <div class="camera-status">
+      <div class="status-indicator">
+        <div class="status-dot" id="cameraStatusDot"></div>
+        <span id="cameraStatusText">Camera: Disconnected</span>
+      </div>
+      <div class="status-indicator">
+        <div class="status-dot" id="frameStatusDot"></div>
+        <span id="frameStatusText">Frame: Black</span>
+      </div>
+      <div class="status-indicator">
+        <div id="timerStatus">Timer: Not Started</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Timer Management Section -->
+<div class="add-timer">
+  <input type="text" id="title" placeholder="Timer Title" autocomplete="off">
+  <input type="number" id="minutes" placeholder="Minutes" min="0">
+  <input type="number" id="seconds" placeholder="Seconds" min="0" max="59">
+  <button id="add">➕ Add Timer</button>
+</div>
+
+<div class="timers" id="timers"></div>
+
+<!-- Hidden canvas for black frame detection -->
+<canvas id="canvas" width="64" height="36"></canvas>
+
+<!-- Fullscreen Overlay -->
+<div class="fullscreen-overlay" id="fullscreen">
+  <button class="exit-fullscreen" id="exitFull">✕ Exit Fullscreen</button>
+  
+  <!-- NDI Video Preview Thumbnail -->
+  <div class="ndi-preview-container" id="ndiPreview">
+    <div class="ndi-preview-header">
+      <div class="ndi-preview-dot" id="previewStatusDot"></div>
+      <span>NDI Preview</span>
+    </div>
+    <video id="fullscreenVideo" autoplay muted playsinline></video>
+    <div class="preview-status" id="previewStatus">Live</div>
+  </div>
+  
+  <button class="nav-arrow left" id="prevTimer">◀</button>
+  <button class="nav-arrow right" id="nextTimer">▶</button>
+  <div class="auto-switch-notification" id="autoSwitchNotif"></div>
+  <div id="fullscreenContent"></div>
+  <div class="live-clock" id="fullscreenClock"></div>
+</div>
+
+<!-- Live Clock (Main Page) -->
+<div class="live-clock" id="pageClock"></div>
+
+<!-- Keyboard Shortcuts Hint -->
+<div class="shortcuts-hint" id="shortcutsHint">
+  <kbd>Space</kbd> Start/Pause • <kbd>R</kbd> Reset • <kbd>Esc</kbd> Exit • <kbd>←</kbd><kbd>→</kbd> Navigate
+</div>
+
+<script>
+  // DOM Elements
+  const timersContainer = document.getElementById("timers");
+  const addButton = document.getElementById("add");
+  const fullscreenOverlay = document.getElementById("fullscreen");
+  const fullscreenContent = document.getElementById("fullscreenContent");
+  const fullscreenClock = document.getElementById("fullscreenClock");
+  const pageClock = document.getElementById("pageClock");
+  const exitFull = document.getElementById("exitFull");
+  const prevTimerBtn = document.getElementById("prevTimer");
+  const nextTimerBtn = document.getElementById("nextTimer");
+  const autoSwitchNotif = document.getElementById("autoSwitchNotif");
+  const timerCount = document.getElementById("timerCount");
+  const shortcutsHint = document.getElementById("shortcutsHint");
+  
+  // NDI Preview Elements
+  const ndiPreview = document.getElementById("ndiPreview");
+  const fullscreenVideo = document.getElementById("fullscreenVideo");
+  const previewStatusDot = document.getElementById("previewStatusDot");
+  const previewStatus = document.getElementById("previewStatus");
+
+  // NDI Camera Elements
+  const video = document.getElementById("video");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  const cameraStatusDot = document.getElementById("cameraStatusDot");
+  const cameraStatusText = document.getElementById("cameraStatusText");
+  const frameStatusDot = document.getElementById("frameStatusDot");
+  const frameStatusText = document.getElementById("frameStatusText");
+  const timerStatus = document.getElementById("timerStatus");
+
+  // Global variables
+  let allTimers = [];
+  let currentTimerIndex = 0;
+  let autoSwitchTimeout = null;
+  let currentFullscreenTimer = null;
+  let ndiStarted = false;
+  let ndiStartTime = 0;
+  let frameCheckInterval = null;
+  let currentTimerRunning = false;
+  let cameraStream = null;
+
+  // SVG gradient definition
+  const svgDefs = `
+    <defs>
+      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+      </linearGradient>
+      <linearGradient id="gradient-warning" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#ff9800;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#ff5722;stop-opacity:1" />
+      </linearGradient>
+      <linearGradient id="gradient-danger" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#f44336;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#e81123;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+  `;
+
+  /* ========== NDI CAMERA FUNCTIONS ========== */
+
+  function updateCameraStatus(connected) {
+    if (connected) {
+      cameraStatusDot.classList.add('active');
+      cameraStatusText.textContent = 'Camera: Connected';
+      previewStatusDot.classList.add('active');
+      previewStatus.textContent = 'Live';
+    } else {
+      cameraStatusDot.classList.remove('active');
+      cameraStatusText.textContent = 'Camera: Disconnected';
+      previewStatusDot.classList.remove('active');
+      previewStatus.textContent = 'No Signal';
+    }
+  }
+
+  function updateFrameStatus(blackFrame) {
+    if (blackFrame) {
+      frameStatusDot.classList.remove('active');
+      frameStatusText.textContent = 'Frame: Black';
+    } else {
+      frameStatusDot.classList.add('active');
+      frameStatusText.textContent = 'Frame: Non-Black';
+    }
+  }
+
+  function updateTimerStatus(started, elapsed = 0) {
+    if (started) {
+      timerStatus.textContent = `Timer: ${elapsed.toFixed(3)}s`;
+    } else {
+      timerStatus.textContent = 'Timer: Waiting for video...';
+    }
+  }
+
+  function resetNdiDetection() {
+    ndiStarted = false;
+    ndiStartTime = 0;
+    currentTimerRunning = false;
+    updateTimerStatus(false);
+    console.log("🔄 NDI detection reset for new timer");
+  }
+
+  /* ---------- BLACK FRAME DETECTION ---------- */
+  function isFrameBlack(imageData, threshold = 20) {
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const brightness = r + g + b;
+      if (brightness > threshold) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /* ---------- FRAME CHECK LOOP ---------- */
+  function checkFrame() {
+    if (video.readyState < 2 || video.videoWidth === 0) {
+      return;
+    }
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const isBlack = isFrameBlack(frame);
+
+    updateFrameStatus(isBlack);
+
+    // Check if we're in fullscreen mode
+    const inFullscreen = fullscreenOverlay.classList.contains('active');
+    
+    if (!isBlack && inFullscreen && allTimers.length > 0) {
+      // Get the current timer in fullscreen
+      const currentTimer = allTimers[currentTimerIndex];
+      
+      if (currentTimer && !currentTimerRunning) {
+        // Timer is not running and we have a non-black frame
+        ndiStarted = true;
+        ndiStartTime = performance.now();
+        currentTimerRunning = true;
+        
+        console.log(`🎬 Non-black frame detected - Starting timer ${currentTimerIndex + 1} automatically`);
+        
+        // Trigger the start button in fullscreen
+        const startBtn = document.getElementById('fsStart');
+        if (startBtn) {
+          startBtn.click();
+          console.log(`✅ Timer ${currentTimerIndex + 1} started automatically`);
+        }
+      }
+    }
+
+    // Initial detection - when no timer has started yet and we're not in fullscreen
+    if (!ndiStarted && !isBlack && allTimers.length > 0 && !inFullscreen) {
+      // First non-black frame detected
+      ndiStarted = true;
+      ndiStartTime = performance.now();
+      console.log("🎬 First non-black frame detected - Starting first timer automatically");
+      
+      // Start the first timer in fullscreen
+      currentTimerIndex = 0;
+      currentTimerRunning = true;
+      openFullscreen(currentTimerIndex, true);
+    }
+
+    if (ndiStarted && currentTimerRunning) {
+      const elapsed = (performance.now() - ndiStartTime) / 1000;
+      updateTimerStatus(true, elapsed);
+    }
+  }
+
+  /* ---------- CAMERA ACCESS ---------- */
+  async function startCamera() {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const ndiCam = devices.find(d =>
+        d.kind === "videoinput" &&
+        d.label.toLowerCase().includes("ndi")
+      );
+
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: ndiCam
+          ? { deviceId: ndiCam.deviceId }
+          : true
+      });
+
+      video.srcObject = cameraStream;
+      fullscreenVideo.srcObject = cameraStream;
+      updateCameraStatus(true);
+
+      // Start frame checking
+      if (frameCheckInterval) clearInterval(frameCheckInterval);
+      frameCheckInterval = setInterval(checkFrame, 100);
+
+    } catch (error) {
+      console.error("Camera access error:", error);
+      updateCameraStatus(false);
+      alert("Could not access camera. Please check permissions.");
+    }
+  }
+
+  /* ========== TIMER MANAGEMENT FUNCTIONS ========== */
+
+  function updateTimerCount() {
+    const count = allTimers.length;
+    timerCount.textContent = `${count} Timer${count !== 1 ? 's' : ''} Active`;
+  }
+
+  function updateLiveClock() {
+    const now = new Date();
+    const hrs = String(now.getHours()).padStart(2, '0');
+    const mins = String(now.getMinutes()).padStart(2, '0');
+    const secs = String(now.getSeconds()).padStart(2, '0');
+    const timeString = `${hrs}:${mins}:${secs}`;
+    pageClock.textContent = timeString;
+    fullscreenClock.textContent = timeString;
+  }
+
+  function showShortcutsHint() {
+    shortcutsHint.classList.add('show');
+    setTimeout(() => {
+      shortcutsHint.classList.remove('show');
+    }, 3000);
+  }
+
+  function createParticles(x, y) {
+    for (let i = 0; i < 30; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      particle.style.left = x + 'px';
+      particle.style.top = y + 'px';
+      particle.style.setProperty('--tx', (Math.random() - 0.5) * 400 + 'px');
+      particle.style.setProperty('--ty', -Math.random() * 300 + 'px');
+      document.body.appendChild(particle);
+      setTimeout(() => particle.remove(), 2000);
+    }
+  }
+
+  function createTimer(title, totalTime) {
+    const timerEl = document.createElement("div");
+    timerEl.className = "timer-container";
+
+    timerEl.innerHTML = `
+      <button class="delete-btn" title="Delete Timer">×</button>
+      <div class="timer-title">${title}</div>
+      <div class="circle">
+        <svg>
+          ${svgDefs}
+          <circle class="circle-bg" cx="100" cy="100" r="90"></circle>
+          <circle class="circle-progress" cx="100" cy="100" r="90"></circle>
+        </svg>
+        <div class="time-display">00:00</div>
+      </div>
+      <div class="timeout-message">⏰ Time's up!</div>
+      <div class="controls">
+        <button class="start">▶ Start</button>
+        <button class="pause">⏸ Pause</button>
+        <button class="reset">↻ Reset</button>
+      </div>
+    `;
+
+    timersContainer.appendChild(timerEl);
+
+    const circle = timerEl.querySelector(".circle-progress");
+    const timeDisplay = timerEl.querySelector(".time-display");
+    const timeoutMsg = timerEl.querySelector(".timeout-message");
+    const deleteBtn = timerEl.querySelector(".delete-btn");
+    const radius = circle.r.baseVal.value;
+    const circumference = 2 * Math.PI * radius;
+
+    circle.style.strokeDasharray = circumference;
+    circle.style.strokeDashoffset = 0;
+
+    let remaining = totalTime;
+    let timer = null;
+
+    function updateCircle() {
+      const percent = remaining / totalTime;
+      circle.style.strokeDashoffset = circumference * (1 - percent);
+
+      if (percent > 0.5) {
+        circle.style.stroke = "url(#gradient)";
+      } else if (percent > 0.25) {
+        circle.style.stroke = "url(#gradient-warning)";
+      } else {
+        circle.style.stroke = "url(#gradient-danger)";
+      }
+    }
+
+    function updateTime() {
+      const min = String(Math.floor(remaining / 60)).padStart(2, '0');
+      const sec = String(remaining % 60).padStart(2, '0');
+      timeDisplay.textContent = `${min}:${sec}`;
+      updateCircle();
+    }
+
+    function showTimeout() {
+      timeoutMsg.style.display = "block";
+      const rect = timerEl.getBoundingClientRect();
+      createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    }
+
+    updateTime();
+
+    function startTimer() {
+      if (!timer && remaining > 0) {
+        timeoutMsg.style.display = "none";
+        currentTimerRunning = true;
+        timer = setInterval(() => {
+          remaining--;
+          updateTime();
+          if (remaining <= 0) {
+            clearInterval(timer);
+            timer = null;
+            currentTimerRunning = false;
+            showTimeout();
+          }
+        }, 1000);
+      }
+    }
+
+    function pauseTimer() {
+      clearInterval(timer);
+      timer = null;
+      currentTimerRunning = false;
+    }
+
+    function resetTimer() {
+      clearInterval(timer);
+      timer = null;
+      remaining = totalTime;
+      currentTimerRunning = false;
+      timeoutMsg.style.display = "none";
+      updateTime();
+    }
+
+    const timerData = {
+      title,
+      totalTime,
+      element: timerEl,
+      getRemaining: () => remaining,
+      start: startTimer,
+      pause: pauseTimer,
+      reset: resetTimer,
+      isRunning: () => timer !== null
+    };
+
+    allTimers.push(timerData);
+    updateTimerCount();
+
+    // Delete button
+    deleteBtn.onclick = (e) => {
+      e.stopPropagation();
+      timerEl.classList.add('removing');
+      setTimeout(() => {
+        const index = allTimers.indexOf(timerData);
+        if (index > -1) allTimers.splice(index, 1);
+        timerEl.remove();
+        updateTimerCount();
+      }, 400);
+    };
+
+    // Make entire card clickable
+    timerEl.onclick = (e) => {
+      if (e.target.tagName === 'BUTTON') return;
+      currentTimerIndex = allTimers.indexOf(timerData);
+      openFullscreen(currentTimerIndex, false);
+    };
+
+    // Button functionality
+    timerEl.querySelector(".start").onclick = (e) => {
+      e.stopPropagation();
+      startTimer();
+    };
+    timerEl.querySelector(".pause").onclick = (e) => {
+      e.stopPropagation();
+      pauseTimer();
+    };
+    timerEl.querySelector(".reset").onclick = (e) => {
+      e.stopPropagation();
+      resetTimer();
+    };
+
+    return timerData;
+  }
+
+  function updateNavigationButtons() {
+    if (currentTimerIndex <= 0) {
+      prevTimerBtn.classList.add('disabled');
+    } else {
+      prevTimerBtn.classList.remove('disabled');
+    }
+
+    if (currentTimerIndex >= allTimers.length - 1) {
+      nextTimerBtn.classList.add('disabled');
+    } else {
+      nextTimerBtn.classList.remove('disabled');
+    }
+  }
+
+  function openFullscreen(timerIndex, autoStart = false) {
+    if (timerIndex < 0 || timerIndex >= allTimers.length) return;
+
+    // Reset NDI detection for the new timer
+    resetNdiDetection();
+    
+    currentTimerIndex = timerIndex;
+    const timerData = allTimers[timerIndex];
+    const { title, totalTime } = timerData;
+
+    if (autoSwitchTimeout) {
+      clearTimeout(autoSwitchTimeout);
+      autoSwitchTimeout = null;
+    }
+    autoSwitchNotif.style.display = 'none';
+
+    fullscreenOverlay.classList.remove('red-blink', 'red-permanent');
+
+    fullscreenContent.innerHTML = `
+      <div class="fullscreen-timer">
+        <div class="timer-title">${title}</div>
+        <div class="circle">
+          <svg>
+            ${svgDefs}
+            <circle class="circle-bg" cx="275" cy="275" r="250"></circle>
+            <circle class="circle-progress" cx="275" cy="275" r="250"></circle>
+          </svg>
+          <div class="time-display">00:00</div>
+        </div>
+        <div class="timeout-message">⏰ TIME'S UP!</div>
+        <div class="controls">
+          <button id="fsStart">▶ Start</button>
+          <button id="fsPause">⏸ Pause</button>
+          <button id="fsReset">↻ Reset</button>
+        </div>
+      </div>
+    `;
+
+    const circle = fullscreenContent.querySelector(".circle-progress");
+    const display = fullscreenContent.querySelector(".time-display");
+    const timeoutMsg = fullscreenContent.querySelector(".timeout-message");
+    const radius = circle.r.baseVal.value;
+    const circumference = 2 * Math.PI * radius;
+
+    circle.style.strokeDasharray = circumference;
+    circle.style.strokeDashoffset = 0;
+
+    let remaining = totalTime;
+    let timer = null;
+    let blinkTimeout = null;
+
+    function updateCircle() {
+      const percent = remaining / totalTime;
+      circle.style.strokeDashoffset = circumference * (1 - percent);
+
+      if (percent > 0.5) {
+        circle.style.stroke = "url(#gradient)";
+      } else if (percent > 0.25) {
+        circle.style.stroke = "url(#gradient-warning)";
+      } else {
+        circle.style.stroke = "url(#gradient-danger)";
+      }
+    }
+
+    function handleRedBlink() {
+      fullscreenOverlay.classList.remove('red-blink');
+      if (blinkTimeout) clearTimeout(blinkTimeout);
+
+      if (remaining === 10 || remaining === 7 || remaining === 5) {
+        fullscreenOverlay.classList.add('red-blink');
+        blinkTimeout = setTimeout(() => {
+          fullscreenOverlay.classList.remove('red-blink');
+        }, 150);
+      }
+      else if (remaining === 3 || remaining === 2 || remaining === 1) {
+        fullscreenOverlay.classList.add('red-blink');
+        blinkTimeout = setTimeout(() => {
+          fullscreenOverlay.classList.remove('red-blink');
+        }, 500);
+      }
+    }
+
+    function updateTime() {
+      const min = String(Math.floor(remaining / 60)).padStart(2, '0');
+      const sec = String(remaining % 60).padStart(2, '0');
+      display.textContent = `${min}:${sec}`;
+      updateCircle();
+
+      if (remaining <= 10 && remaining > 0) {
+        handleRedBlink();
+      }
+    }
+
+    function showTimeout() {
+      timeoutMsg.style.display = "block";
+      fullscreenOverlay.classList.remove('red-blink');
+      fullscreenOverlay.classList.add('red-permanent');
+
+      const rect = fullscreenContent.getBoundingClientRect();
+      createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+      // Reset NDI detection for next timer
+      resetNdiDetection();
+
+      if (currentTimerIndex < allTimers.length - 1) {
+        let countdown = 10;
+        autoSwitchNotif.textContent = `Switching to next timer in ${countdown} seconds...`;
+        autoSwitchNotif.style.display = 'block';
+
+        const countdownInterval = setInterval(() => {
+          countdown--;
+          if (countdown > 0) {
+            autoSwitchNotif.textContent = `Switching to next timer in ${countdown} seconds...`;
+          } else {
+            clearInterval(countdownInterval);
+          }
+        }, 1000);
+
+        autoSwitchTimeout = setTimeout(() => {
+          autoSwitchNotif.style.display = 'none';
+          openFullscreen(currentTimerIndex + 1, false);
+        }, 10000);
+      }
+    }
+
+    function start() {
+      if (!timer && remaining > 0) {
+        timeoutMsg.style.display = "none";
+        fullscreenOverlay.classList.remove('red-permanent');
+        currentTimerRunning = true;
+        timer = setInterval(() => {
+          remaining--;
+          updateTime();
+          if (remaining <= 0) {
+            clearInterval(timer);
+            timer = null;
+            currentTimerRunning = false;
+            showTimeout();
+          }
+        }, 1000);
+      }
+    }
+
+    function pause() {
+      clearInterval(timer);
+      timer = null;
+      currentTimerRunning = false;
+      fullscreenOverlay.classList.remove('red-blink');
+      if (blinkTimeout) clearTimeout(blinkTimeout);
+    }
+
+    function reset() {
+      clearInterval(timer);
+      timer = null;
+      remaining = totalTime;
+      currentTimerRunning = false;
+      timeoutMsg.style.display = "none";
+      fullscreenOverlay.classList.remove('red-blink', 'red-permanent');
+      if (blinkTimeout) clearTimeout(blinkTimeout);
+      updateTime();
+    }
+
+    fullscreenContent.querySelector("#fsStart").onclick = start;
+    fullscreenContent.querySelector("#fsPause").onclick = pause;
+    fullscreenContent.querySelector("#fsReset").onclick = reset;
+
+    currentFullscreenTimer = { start, pause, reset, updateTime };
+
+    updateTime();
+    updateNavigationButtons();
+    fullscreenOverlay.classList.add("active");
+    showShortcutsHint();
+
+    // Show NDI preview in fullscreen
+    ndiPreview.style.display = 'block';
+
+    if (autoStart) {
+      start();
+    }
+  }
+
+  /* ========== EVENT LISTENERS ========== */
+
+  // Add timer button
+  addButton.onclick = () => {
+    const title = document.getElementById("title").value || "Untitled Timer";
+    const minutes = parseInt(document.getElementById("minutes").value) || 0;
+    const seconds = parseInt(document.getElementById("seconds").value) || 0;
+    const totalSeconds = minutes * 60 + seconds;
+    if (totalSeconds <= 0) {
+      alert("Please enter a valid time greater than 0.");
+      return;
+    }
+    createTimer(title, totalSeconds);
+    document.getElementById("title").value = "";
+    document.getElementById("minutes").value = "";
+    document.getElementById("seconds").value = "";
+  };
+
+  // Enter key to add timer
+  document.getElementById("seconds").addEventListener("keypress", (e) => {
+    if (e.key === "Enter") addButton.click();
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (!fullscreenOverlay.classList.contains('active')) return;
+
+    switch (e.key) {
+      case ' ':
+        e.preventDefault();
+        const startBtn = document.getElementById('fsStart');
+        const pauseBtn = document.getElementById('fsPause');
+        if (startBtn) startBtn.click();
+        else if (pauseBtn) pauseBtn.click();
+        break;
+      case 'r':
+      case 'R':
+        e.preventDefault();
+        document.getElementById('fsReset')?.click();
+        break;
+      case 'Escape':
+        exitFull.click();
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        prevTimerBtn.click();
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        nextTimerBtn.click();
+        break;
+    }
+  });
+
+  prevTimerBtn.onclick = () => {
+    if (currentTimerIndex > 0) {
+      resetNdiDetection(); // Reset detection for the new timer
+      openFullscreen(currentTimerIndex - 1);
+    }
+  };
+
+  nextTimerBtn.onclick = () => {
+    if (currentTimerIndex < allTimers.length - 1) {
+      resetNdiDetection(); // Reset detection for the new timer
+      openFullscreen(currentTimerIndex + 1);
+    }
+  };
+
+  exitFull.onclick = () => {
+    fullscreenOverlay.classList.remove("active");
+    fullscreenOverlay.classList.remove("red-blink", "red-permanent");
+    fullscreenContent.innerHTML = "";
+    ndiPreview.style.display = 'none'; // Hide preview when exiting fullscreen
+    if (autoSwitchTimeout) {
+      clearTimeout(autoSwitchTimeout);
+      autoSwitchTimeout = null;
+    }
+    autoSwitchNotif.style.display = 'none';
+    resetNdiDetection();
+  };
+
+  /* ========== INITIALIZATION ========== */
+
+  // Initialize live clock
+  setInterval(updateLiveClock, 1000);
+  updateLiveClock();
+
+  // Start camera
+  startCamera();
+
+  // Create a default timer for testing
+  setTimeout(() => {
+    if (allTimers.length === 0) {
+      createTimer("Presentation Timer", 300); // 5 minutes
+      createTimer("Q&A Session", 180); // 3 minutes
+      createTimer("Break Time", 120); // 2 minutes
+    }
+  }, 1000);
+
+  // Make NDI preview draggable
+  let isDragging = false;
+  let dragOffset = { x: 0, y: 0 };
+
+  ndiPreview.addEventListener('mousedown', startDrag);
+  ndiPreview.addEventListener('touchstart', startDrag);
+
+  function startDrag(e) {
+    isDragging = true;
+    const rect = ndiPreview.getBoundingClientRect();
+    
+    if (e.type === 'mousedown') {
+      dragOffset.x = e.clientX - rect.left;
+      dragOffset.y = e.clientY - rect.top;
+      document.addEventListener('mousemove', drag);
+      document.addEventListener('mouseup', stopDrag);
+    } else {
+      const touch = e.touches[0];
+      dragOffset.x = touch.clientX - rect.left;
+      dragOffset.y = touch.clientY - rect.top;
+      document.addEventListener('touchmove', drag);
+      document.addEventListener('touchend', stopDrag);
+    }
+    
+    e.preventDefault();
+  }
+
+  function drag(e) {
+    if (!isDragging) return;
+    
+    let clientX, clientY;
+    
+    if (e.type === 'mousemove') {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    } else {
+      const touch = e.touches[0];
+      clientX = touch.clientX;
+      clientY = touch.clientY;
+    }
+    
+    ndiPreview.style.left = (clientX - dragOffset.x) + 'px';
+    ndiPreview.style.top = (clientY - dragOffset.y) + 'px';
+  }
+
+  function stopDrag() {
+    isDragging = false;
+    document.removeEventListener('mousemove', drag);
+    document.removeEventListener('mouseup', stopDrag);
+    document.removeEventListener('touchmove', drag);
+    document.removeEventListener('touchend', stopDrag);
+  }
+</script>
+</body>
+</html>
